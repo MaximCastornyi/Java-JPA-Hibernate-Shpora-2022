@@ -1,0 +1,181 @@
+podklu4enie
+
+spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce
+spring.datasource.username=root
+spring.datasource.password=08082006maxim
+
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+
+#may be none, create-only, drop, create, create-drop, validate, update - govorit JPA 4to mojno sdelati s tablizey
+spring.jpa.hibernate.ddl-auto=none
+
+spring.jpa.properties.hibernate.format_sql=true
+
+@Entity
+@Table(name="products",
+        schema="ecommerce",
+        uniqueConstraints = { /////////////ru4noe opredelenie poley
+        @UniqueConstraint(
+                name = "sku_unique",
+                columnNames="sku"
+        )
+        })
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)//auto-generation strategy
+    private Long id;
+    
+    @Column(name="stock_keeping_unit", nullable=false)//opredelyaet imya column
+    private String sku;
+    
+
+Ломбок уменьшает текст программ
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+и тогда не нужно добавлять геттеры и сеттерыб добавляет конструкторы, стрингует
+
+Использование самых распространенных CRUD JPA методов в тестах представлено.
+    void saveMethod(){
+    void updateUsingSaveMethod(){
+    void findByIdMethod(){
+    void saveAllMethod(){
+    void findAllMethod(){
+    void deleteByIdMethod() {
+    void deleteMethod(){
+    void deleteAllMethod(){
+    void existsByIdMethod(){
+    void countMethod(){
+
+Использование самых распространенных запросов в JPA
+
+    void findByNameMethod(){
+    void findByIdMethod(){
+    void findByNameOrDescriptionMethod(){
+    void findByNameAndDescriptionMethod(){
+    void findDistinctByNameMethod(){
+    void findByPriceGreaterThanMethod(){
+    void findByPriceLessThanMethod(){
+    void findByNameContainingMethod(){
+    void findByNameLikeMethod(){
+    void findByPriceBetweenMethod(){
+    void findByDateCreatedBetweenMethod(){
+    void findByNameInMethod(){
+    void findFirst2ByOrderByNameAscMethod(){
+    void findTop2ByOrderByPriceDescMethod(){
+
+
+Отличия JPQL и SQL Native
+    // Define JPQL query using @Query annotation with index or position parameters
+    @Query("SELECT p from Product p where p.name = ?1 or p.description = ?2")
+    Product findByNameOrDescriptionJPQLIndexParam(String name, String description);
+
+
+    // Define Native SQL query using @Query annotation with index or position parameters
+    @Query(value = "select * from products p where p.name = ?1 or p.description = ?2", nativeQuery = true)
+    Product findByNameOrDescriptionSQLIndexParam(String name, String description);
+
+Для того чтобы сделать код используемым несколько раз, есть возможность использовать именнованные запросы с @NamedQuery или с @NamedNativeQuery, если в запросе чистый SQL
+выглядят так
+//@NamedQuery(
+//        name = "Product.findByPrice",
+//        query = "SELECT p from Product p where p.price = :price"
+//)
+
+@NamedQueries(
+        {
+                @NamedQuery(
+                        name = "Product.findAllOrderByNameDesc",
+                        query = "SELECT p from Product p ORDER By p.name DESC"
+                ),
+                @NamedQuery(
+                        name = "Product.findByPrice",
+                        query = "SELECT p from Product p where p.price = :price"
+                )
+        }
+)
+
+//@NamedNativeQuery(
+//        name = "Product.findByDescription",
+//        query = "select * from products p where p.description = :description",
+//        resultClass = Product.class
+//)
+
+@NamedNativeQueries(
+        {
+                @NamedNativeQuery(
+                        name = "Product.findByDescription",
+                        query = "select * from products p where p.description = :description",
+                        resultClass = Product.class
+                ),
+                @NamedNativeQuery(
+                        name = "Product.findAllOrderByNameASC",
+                        query = "select * from products order by name asc",
+                        resultClass = Product.class
+                )
+        }
+)
+
+распологаются в Entity
+
+так же идут добавления в Репозитори
+    // Define Named JPQL query
+    Product findByPrice(@Param("price") BigDecimal price);
+
+    List<Product> findAllOrderByNameDesc();
+
+    // Define Named native SQL query
+    @Query(nativeQuery = true)
+    Product findByDescription(@Param("description") String description);
+
+    List<Product> findAllOrderByNameASC();
+    
+ Пагинация состоит из двух видов: пагинация по размеру (количеству записей на странице) и пагинация по номерам страниц.  
+ выглядит так
+     void pagination(){
+ 
+         int pageNo = 0;
+         int pageSize = 5;
+ 
+        Page<Product> page = productRepository.findAll(pageable);
+
+        List<Product> products = page.getContent();
+
+        products.forEach((p) ->{
+            System.out.println(p);
+        });
+
+        // total pages
+        int totalPage = page.getTotalPages();
+        // total elements
+        long totalElements = page.getTotalElements();
+        // number of elements
+        int numberOfElements = page.getNumberOfElements();
+        // size
+        int size = page.getSize();
+
+Сортировка
+    void sorting(){
+        String sortBy = "price";
+        String sortDir = "desc";
+
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                Sort.by(sortBy).ascending(): Sort.by(sortBy).descending();
+
+        List<Product> products = productRepository.findAll(sort);
+
+        products.forEach((p) ->{
+            System.out.println(p);
+        });
+                
+а теперь все вместе
+        // Sort object
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                Sort.by(sortBy).ascending(): Sort.by(sortBy).descending();
+
+        // Pageable object
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        Page<Product> page = productRepository.findAll(pageable);
